@@ -3,7 +3,8 @@ window._sj={log:[],status:'run'};
 (async()=>{const L=s=>_sj.log.push(s);try{
 const b=await C('landing.block.getlist',{lid:1,params:{edit_mode:1,get_content:true}});
 const get=id=>b.find(x=>x.id==id);
-const save=async(id,html)=>{const r=await C('landing.block.updatecontent',{lid:1,block:id,content:html});L(id+':'+(r.err||r));};
+const inner=html=>{const d=new DOMParser().parseFromString(html,'text/html');const w=d.body.firstElementChild;return (w&&w.classList.contains('block-wrapper'))?w.innerHTML:html;};
+const save=async(id,html)=>{html=inner(html);const r=await C('landing.block.updatecontent',{lid:1,block:id,content:html});L(id+':'+(r.err||r));};
 for(const id of [7,11,19,21]){let h=get(id).content.replace(/g-theme-business-bg-blue-dark-v1-opacity-0_9/g,'g-bg-primary');
  if(id==21) h=h.replace(/g-color-primary/g,'g-color-white').replace(/g-color-gray-dark-v5|g-color-gray-light-v1|g-color-gray-dark-v2/g,'g-color-white-opacity-0_8');
  await save(id,h);}
