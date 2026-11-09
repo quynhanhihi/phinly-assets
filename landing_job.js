@@ -7,7 +7,7 @@ const b=await C('landing.block.getlist',{lid:LID,params:{edit_mode:1,get_content
 const doc=id=>new DOMParser().parseFromString((b.find(x=>x.id==id)||{content:''}).content,'text/html');
 const cnt=(id,sel)=>doc(id).querySelectorAll(sel).length;
 const up=async(block,file)=>{const r=await C('landing.block.uploadfile',{block,picture:RAW+file});L('up '+file+' '+(r.err||r.src||JSON.stringify(r).slice(0,80)));return r;};
-const nodes=async(block,data)=>{const r=await C('landing.block.updatenodes',{lid:LID,block,data});L('nodes '+block+' '+(r.err||r));};
+const nodes=async(block,data)=>{const d={};for(const [k,v] of Object.entries(data)){(Array.isArray(v)?v:[v]).forEach((x,i)=>d[k+'@'+i]=x);}const r=await C('landing.block.updatenodes',{lid:LID,block,data:d});L('nodes '+block+' '+(r.err||r));};
 const trim=async(block,sel,keep)=>{let n=cnt(block,sel);while(n>keep){const r=await C('landing.block.removecard',{lid:LID,block,selector:sel+'@'+(n-1)});if(r.err){L('rm '+block+' '+r.err);break;}n--;}};
 
 // 1. header menu (block 27)
@@ -45,7 +45,7 @@ await nodes(5,{'.landing-block-node-card-title':['Прямые поставки'
 await nodes(7,{'.landing-block-node-title':['Каталог'],'.landing-block-node-text':['Молотый и зерновой кофе, фины, сгущёнка и подарочные наборы']});
 
 // 6. delivery
-await nodes(11,{'.landing-block-node-title':['Доставка и оплата'],'.landing-block-node-text':['Курьером по Москве в пределах МКАД - на следующий день, 300 ₽, бесплатно от 2 000 ₽.<br>Пункты выдачи СДЭК по всей России - от 2 до 5 дней.<br>Самовывоз - Москва, ул. Стремянная, 36.<br>Оплата картой онлайн, через СБП или наличными курьеру.']});
+await nodes(11,{'.landing-block-node-title':['Доставка и оплата'],'.landing-block-node-text':['Курьером по Москве в пределах МКАД - на следующий день, 300 ₽, бесплатно от 2 000 ₽.<br>Пункты выдачи СДЭК по всей России - от 2 до 5 дней.<br>Самовывоз - '+PH.addr+'.<br>Оплата картой онлайн, через СБП или наличными курьеру.']});
 
 // 7. brew block
 const brew=await up(13,'brew.jpg');
@@ -53,24 +53,23 @@ await nodes(13,{'.landing-block-node-img':[{src:brew.src,id:brew.id,alt:'Вье�
  '.landing-block-node-text':['1. Налейте в чашку 2 ложки сгущёнки и поставьте сверху фин.<br>2. Насыпьте 2 ложки молотого кофе и слегка прижмите прессом.<br>3. Влейте немного горячей воды (90-95 °C) и подождите 30 секунд.<br>4. Долейте воду до верха и накройте крышкой.<br>5. Через 4-5 минут перемешайте и добавьте лёд. Кофе готов!']});
 
 // 8. remove gallery title+grid
-for(const id of [15,17]){const r=await C('landing.block.delete',{lid:LID,block:id});L('del '+id+' '+(r.err||r));}
+for(const id of [15,17]){const r=await C('landing.landing.deleteblock',{lid:LID,block:id});L('del '+id+' '+(r.err||r));}
 
 // 9. contacts title + contacts
 await nodes(19,{'.landing-block-node-title':['Контакты'],'.landing-block-node-text':['Есть вопросы о кофе или заказе? Позвоните нам или напишите - бариста PHINLY ответит и поможет выбрать.']});
 await nodes(21,{
- '.landing-block-node-linkcontact-link':[{href:'tel:+74951234567',text:'',target:'_self'},{href:'mailto:hello@phinly.ru',text:'',target:'_self'}],
+ '.landing-block-node-linkcontact-link':[{href:'tel:'+PH.tel,text:'',target:'_self'},{href:'mailto:'+PH.email,text:'',target:'_self'}],
  '.landing-block-node-linkcontact-title':['Телефон','Email'],
- '.landing-block-node-linkcontact-text':['+7 (495) 123-45-67','hello@phinly.ru'],
+ '.landing-block-node-linkcontact-text':[PH.phone,PH.email],
  '.landing-block-node-contact-title':['Адрес'],
- '.landing-block-node-contact-text':['Москва, ул. Стремянная, 36']});
+ '.landing-block-node-contact-text':[PH.addr]});
 
 // 10. footer
-const fid=await C('landing.landing.addblock',{lid:LID,fields:{CODE:'17.copyright',AFTER_ID:21}});
-L('footer '+JSON.stringify(fid));
-_lj.footer=fid;
+let fb=b.find(x=>x.code=='17.copyright');let fid=fb?fb.id:await C('landing.landing.addblock',{lid:LID,fields:{CODE:'17.copyright',AFTER_ID:21}});
+_lj.fid=fid;_lj.fhtml=fb?fb.content.replace(/\s+/g,' ').slice(0,600):'';
+await nodes(fid,{'.landing-block-node-text':['© 2026 PHINLY - вьетнамский кофе с доставкой по Москве<br>'+PH.addr+' · <a href="tel:'+PH.tel+'">'+PH.phone+'</a> · <a href="mailto:'+PH.email+'">'+PH.email+'</a><br>Учебный проект']});
 const site=await C('landing.site.update',{id:3,fields:{TITLE:'PHINLY - вьетнамский кофе'}});
 const land=await C('landing.landing.update',{lid:LID,fields:{TITLE:'PHINLY - вьетнамский кофе с доставкой по Москве'}});
 L('titles '+JSON.stringify([site,land]));
 _lj.status='done';
 }catch(e){_lj.status='err '+e;}})();
-'started';
